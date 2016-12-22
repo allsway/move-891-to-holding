@@ -13,10 +13,6 @@ def get_key():
 # Returns the Alma API base URL
 def get_base_url():
 	return config.get('Params', 'baseurl')
-
-# Returns the location mapping file, taken from the Alma Migration Form
-def get_location_mapping():
-	return config.get('Params', 'locations')
 	
 
 """
@@ -29,14 +25,15 @@ def get_holding_url(mms_id,holding_id):
 """
 	Return element with the max indicator 
 """
-def get_max_ind(element):
+def get_max_ind(element,ind):
 	indicators = []
 	for marc_891 in element:
 		for subfield in marc_891.findall('subfield[@code="9"]'):
 			if subfield.text == "853":
-				indicators.append(marc_891.attrib['ind1'])
+				indicators.append(marc_891.attrib[ind])
 	return max(indicators)
 	
+		
 """
 	Gets all subfields from the 891 highest indicator, $9 = 853
 """
@@ -50,6 +47,7 @@ def get_marc_elements(rec):
 		if rec.find(search_string) is not None:
 			new_subfields[subfield] = rec.find(search_string).text
 	print (new_subfields)
+	return new_subfields
 
 """
 	Get the holding data that you will post back to the Alma API
@@ -60,14 +58,28 @@ def get_marc_elements(rec):
 		- Pick the one with an associated order record? Not retrievable through the API
 """
 def get_holding(records):
-	print ("hey")
 	for holdings in records.findall('./datafield[@tag="852"]'):
 		if holdings.find('subfield[@code="c"]').text == 'pru':
-			print (holdings.find('subfield[@code="c"]').text)
 			print (holdings.find('subfield[@code="8"]').text)
 			return holdings.find('subfield[@code="8"]').text
+			
+			
+"""
+	Creates the 853 datafield element and appends all subfields from the 891 field to the 853 holding field
+"""
+def add_853_field(record,new_subfields):
+	marc_853 = ET.Element('datafield')
+	marc_853.set("tag","853")	
+	# Add indicators
+	for key,value in new_subfields.items():
+		sub = ET.SubElement(marc_853,'subfield')
+		sub.set('code', key)
+		sub.text = value
+	record.append(marc_853)
+
 
 """
+
 """
 def create_853_field(url,new_subfields):
 	# make call to alma API
@@ -75,6 +87,27 @@ def create_853_field(url,new_subfields):
 	if response.status_code != 200:
 		return None
 	print (response.content)
+	holding = ET.fromstring(response.content)
+	if holding.find('record/datafield[@tag="853"]') is not None:
+		print ("853 already in holding record")
+		return None
+	record = holding.findall('record')[0]
+	add_853_field(record,new_subfields)
+	print (ET.tostring(holding))
+	
+	
+"""
+	Returns the marching datafield for the 891 field that has a highest indicators 
+"""
+def get_best_891_field(records):
+	marc_891s = records.findall('./datafield[@tag="891"]')
+	max_indicator_1 = get_max_ind(marc_891s,'ind1')
+	max_indicator_2 = get_max_ind(records.findall('./datafield[@tag="891"][@ind1="' + max_indicator_1 + '"]'),'ind2')
+	print (max_indicator_2)
+	for subfield in records.findall('./datafield[@tag="891"]/subfield[@code="9"]'):
+		if subfield.text == "853":
+			rec = records.find('./datafield[@tag="891"][@ind1="' + max_indicator_1 + '"][@ind2="' + max_indicator_2 + '"]')
+		return rec
 	
 
 """
@@ -82,19 +115,11 @@ def create_853_field(url,new_subfields):
 """
 def read_bibs(bib_records):
 	tree = ET.parse(bib_records)
-	# for each record, grab the MMS ID
-	# 891 field 
-	# And anything else?
 	for records in tree.findall('record'):
 		# Get bib record MMS ID 
 		mms_id = records.find('./controlfield[@tag="001"]').text
 		print(mms_id)
-		marc_891s = records.findall('./datafield[@tag="891"]')
-		max_indicator = get_max_ind(marc_891s)
-		for subfield in records.findall('./datafield[@tag="891"]/subfield[@code="9"]'):
-			if subfield.text == "853":
-				rec = records.find('./datafield[@tag="891"][@ind1="' + max_indicator + '"]')
-		#print(rec.find('subfield[@code="9"]').text)
+		rec = get_best_891_field(records)
 		new_subfields = get_marc_elements(rec)
 		holding_id = get_holding(records)
 		url = get_holding_url(mms_id,holding_id)
