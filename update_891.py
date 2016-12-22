@@ -39,9 +39,8 @@ def get_max_ind(element,ind):
 """
 def get_marc_elements(rec):
 	new_subfields = {}
-	marc_tag = rec.find('subfield[@code="9"]').text
 	indicator = rec.find('subfield[@code="8"]').text
-	subfields = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','t','u','v','w','x','y','z']
+	subfields = ['8', 'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','t','u','v','w','x','y','z']
 	for subfield in subfields:
 		search_string = 'subfield[@code="' + subfield + '"]'
 		if rec.find(search_string) is not None:
@@ -70,7 +69,6 @@ def get_holding(records):
 def add_853_field(record,new_subfields):
 	marc_853 = ET.Element('datafield')
 	marc_853.set("tag","853")	
-	# Add indicators
 	for key,value in new_subfields.items():
 		sub = ET.SubElement(marc_853,'subfield')
 		sub.set('code', key)
