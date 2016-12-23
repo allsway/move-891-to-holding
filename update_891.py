@@ -4,6 +4,7 @@ import sys
 import csv
 import configparser
 import logging
+import collections
 import xml.etree.ElementTree as ET
 
 # Returns the API key
@@ -23,7 +24,7 @@ def get_holding_url(mms_id,holding_id):
 
 
 """
-	Return element with the max indicator 
+	Return the max indicator value for the 891 field
 """
 def get_max_ind(element,ind):
 	indicators = []
@@ -40,13 +41,13 @@ def get_max_ind(element,ind):
 def get_marc_elements(rec):
 	new_subfields = {}
 	indicator = rec.find('subfield[@code="8"]').text
-	subfields = ['8', 'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','t','u','v','w','x','y','z']
+	subfields = ['8','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','t','u','v','w','x','y','z']
 	for subfield in subfields:
 		search_string = 'subfield[@code="' + subfield + '"]'
 		if rec.find(search_string) is not None:
 			new_subfields[subfield] = rec.find(search_string).text
-	print (new_subfields)
-	return new_subfields
+	print (sorted(new_subfields.items()))
+	return sorted(new_subfields.items())
 
 """
 	Get the holding data that you will post back to the Alma API
@@ -69,7 +70,7 @@ def get_holding(records):
 def add_853_field(record,new_subfields):
 	marc_853 = ET.Element('datafield')
 	marc_853.set("tag","853")	
-	for key,value in new_subfields.items():
+	for key,value in new_subfields:
 		sub = ET.SubElement(marc_853,'subfield')
 		sub.set('code', key)
 		sub.text = value
@@ -77,34 +78,36 @@ def add_853_field(record,new_subfields):
 
 
 """
-
+	Gets holding data form the Alma API, calls add_853_field, and posts updated holding with added 853 field
 """
 def create_853_field(url,new_subfields):
-	# make call to alma API
 	response = requests.get(url)
 	if response.status_code != 200:
 		return None
 	print (response.content)
 	holding = ET.fromstring(response.content)
 	if holding.find('record/datafield[@tag="853"]') is not None:
-		print ("853 already in holding record")
+		logging.info("853 already in holding record: " + url)
 		return None
 	record = holding.findall('record')[0]
 	add_853_field(record,new_subfields)
+	headers = {"Content-Type": "application/xml"}
 	print (ET.tostring(holding))
+	r = requests.put(url,data=ET.tostring(holding),headers=headers)
+	print (r.content)
 	
 	
 """
-	Returns the marching datafield for the 891 field that has a highest indicators 
+	Returns the matching datafield for the 891 field that has a highest indicators 
 """
 def get_best_891_field(records):
-	marc_891s = records.findall('./datafield[@tag="891"]')
+	field_891 = "./datafield[@tag=\"891\"]"
+	marc_891s = records.findall(field_891)
 	max_indicator_1 = get_max_ind(marc_891s,'ind1')
-	max_indicator_2 = get_max_ind(records.findall('./datafield[@tag="891"][@ind1="' + max_indicator_1 + '"]'),'ind2')
-	print (max_indicator_2)
-	for subfield in records.findall('./datafield[@tag="891"]/subfield[@code="9"]'):
+	max_indicator_2 = get_max_ind(records.findall(field_891 + '[@ind1="' + max_indicator_1 + '"]'),'ind2')
+	for subfield in records.findall(field_891 + '/subfield[@code="9"]'):
 		if subfield.text == "853":
-			rec = records.find('./datafield[@tag="891"][@ind1="' + max_indicator_1 + '"][@ind2="' + max_indicator_2 + '"]')
+			rec = records.find(field_891 + '[@ind1="' + max_indicator_1 + '"][@ind2="' + max_indicator_2 + '"]')
 		return rec
 	
 
@@ -124,6 +127,7 @@ def read_bibs(bib_records):
 		create_853_field(url,new_subfields)
 				
 				
+logging.basicConfig(filename='status.log',level=logging.DEBUG)				
 config = configparser.ConfigParser()
 config.read(sys.argv[1])
 
