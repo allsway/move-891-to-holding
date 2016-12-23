@@ -16,6 +16,6 @@ Takes as arguments:
 - an XML file of bib records that are associated with holdings that require prediction patterns.  This is the default Alma export bib records in XML format file.  
 
 Creates:
-- Updated holding records, with the addition of an 853 prediction pattern field for any holding in the location default_location that doesn't already contain an 853 field.  
+- Updated holding records, with the addition of an 853 prediction pattern field for any holding in the location {default_location} that doesn't already contain an 853 field.  
 
 Run as `python ./update_891.py {config.txt} {bib_records.xml}`
