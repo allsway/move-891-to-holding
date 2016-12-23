@@ -41,11 +41,8 @@ def get_max_ind(element,ind):
 def get_marc_elements(rec):
 	new_subfields = {}
 	indicator = rec.find('subfield[@code="8"]').text
-	subfields = ['8','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','t','u','v','w','x','y','z']
-	for subfield in subfields:
-		search_string = 'subfield[@code="' + subfield + '"]'
-		if rec.find(search_string) is not None:
-			new_subfields[subfield] = rec.find(search_string).text
+	for subfields in rec.findall('subfield'):
+		new_subfields[subfields.attrib['code']] = subfields.text
 	print (sorted(new_subfields.items()))
 	return sorted(new_subfields.items())
 
@@ -60,7 +57,6 @@ def get_marc_elements(rec):
 def get_holding(records):
 	for holdings in records.findall('./datafield[@tag="852"]'):
 		if holdings.find('subfield[@code="c"]').text == 'pru':
-			print (holdings.find('subfield[@code="8"]').text)
 			return holdings.find('subfield[@code="8"]').text
 			
 			
@@ -95,6 +91,8 @@ def create_853_field(url,new_subfields):
 	print (ET.tostring(holding))
 	r = requests.put(url,data=ET.tostring(holding),headers=headers)
 	print (r.content)
+	if r.status_code == 200:
+		logging.info('')
 	
 	
 """
