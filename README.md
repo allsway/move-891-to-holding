@@ -10,7 +10,7 @@ baseurl: host
 location: default_location
 ```
 
-####update-891.py
+####update_891.py
 Takes as arguments:
 - the configuration file with the settings listed above
 - an XML file of bib records that are associated with holdings that require prediction patterns.  This is the default Alma export bib records in XML format file.  
