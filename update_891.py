@@ -30,7 +30,8 @@ def get_marc_elements(datafield):
 	new_subfields = {}
 	indicator = datafield.find('subfield[@code="8"]').text
 	for subfields in datafield.findall('subfield'):
-		new_subfields[subfields.attrib['code']] = subfields.text
+		if subfields.attrib['code'] != '9':
+			new_subfields[subfields.attrib['code']] = subfields.text
 	print (sorted(new_subfields.items()))
 	return sorted(new_subfields.items())
 
@@ -81,26 +82,17 @@ def create_853_field(url,new_subfields):
 	print (r.content)
 	if r.status_code == 200:
 		logging.info('')
-	
-"""
-"""
-def get_max_subfield():
-	print (test)	
-	
+
 	
 """
 	Returns the matching datafield for the 891 field that has a highest indicators 
 """
 def get_best_891_field(records):
 	subfield_val = 0
-	field_891 = './datafield[@tag="891"]'
-	marc_891s = records.findall(field_891)
-#	max_indicator_1 = get_max_ind(marc_891s,'ind1')
 	for datafield in records.findall('./datafield[@tag="891"]'):
 		subfield_9 = datafield.find('subfield[@code="9"]')
 		if subfield_9.text == "853":
 			# get max $8 field
-		#	print (datafield.find('subfield[@code="8"]').text)
 			if int(datafield.find('subfield[@code="8"]').text) > subfield_val:
 				subfield_val = int(datafield.find('subfield[@code="8"]').text)
 				max_datafield = datafield
@@ -119,9 +111,9 @@ def read_bibs(bib_records):
 		print(mms_id)
 		rec = get_best_891_field(records)
 		new_subfields = get_marc_elements(rec)
-	#	holding_id = get_holding(records)
-	#	url = get_holding_url(mms_id,holding_id)
-	#	create_853_field(url,new_subfields)
+		holding_id = get_holding(records)
+		url = get_holding_url(mms_id,holding_id)
+		create_853_field(url,new_subfields)
 				
 				
 logging.basicConfig(filename='status.log',level=logging.DEBUG)				
