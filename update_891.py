@@ -14,6 +14,9 @@ def get_key():
 # Returns the Alma API base URL
 def get_base_url():
 	return config.get('Params', 'baseurl')
+
+def get_periodical_loc():
+	return config.get('Params', 'location')
 	
 
 """
@@ -45,7 +48,7 @@ def get_marc_elements(datafield):
 """
 def get_holding(records):
 	for holdings in records.findall('./datafield[@tag="852"]'):
-		if holdings.find('subfield[@code="c"]').text == 'pru':
+		if holdings.find('subfield[@code="c"]').text == get_periodical_loc():
 			return holdings.find('subfield[@code="8"]').text
 			
 			
@@ -89,6 +92,7 @@ def create_853_field(url,new_subfields):
 """
 def get_best_891_field(records):
 	subfield_val = 0
+	max_datafield = None
 	for datafield in records.findall('./datafield[@tag="891"]'):
 		subfield_9 = datafield.find('subfield[@code="9"]')
 		if subfield_9.text == "853":
@@ -96,7 +100,8 @@ def get_best_891_field(records):
 			if int(datafield.find('subfield[@code="8"]').text) > subfield_val:
 				subfield_val = int(datafield.find('subfield[@code="8"]').text)
 				max_datafield = datafield
-	print (max_datafield.find('subfield[@code="8"]').text)
+	if max_datafield is not None:
+		print (max_datafield.find('subfield[@code="8"]').text)
 	return max_datafield
 	
 
@@ -110,10 +115,13 @@ def read_bibs(bib_records):
 		mms_id = records.find('./controlfield[@tag="001"]').text
 		print(mms_id)
 		rec = get_best_891_field(records)
-		new_subfields = get_marc_elements(rec)
-		holding_id = get_holding(records)
-		url = get_holding_url(mms_id,holding_id)
-		create_853_field(url,new_subfields)
+		if rec is not None:
+			new_subfields = get_marc_elements(rec)
+			holding_id = get_holding(records)
+			url = get_holding_url(mms_id,holding_id)
+			create_853_field(url,new_subfields)
+		else:
+			logging.info('No 891 field found in record: ' + mms_id)
 				
 				
 logging.basicConfig(filename='status.log',level=logging.DEBUG)				
