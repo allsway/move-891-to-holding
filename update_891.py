@@ -23,6 +23,8 @@ def get_periodical_loc():
 	Return holding API url
 """
 def get_holding_url(mms_id,holding_id):
+	print (mms_id)
+	print (holding_id)
 	return get_base_url() + "bibs/" + mms_id + '/holdings/' + holding_id + '?apikey=' + get_key()
 	
 		
@@ -132,8 +134,11 @@ def read_bibs(bib_records):
 		if rec is not None:
 			new_subfields = get_marc_elements(rec)
 			holding_id = get_holding(records)
-			url = get_holding_url(mms_id,holding_id)
-			create_853_field(url,new_subfields)
+			if holding_id is not None:
+				url = get_holding_url(mms_id,holding_id)
+				create_853_field(url,new_subfields)
+			else:
+				logging.info('No holding found in record: ' +  mms_id)
 		else:
 			logging.info('No 891 field found in record: ' + mms_id)
 				
