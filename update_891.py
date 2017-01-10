@@ -35,8 +35,8 @@ def get_marc_elements(datafield):
 	for subfields in datafield.findall('subfield'):
 		if subfields.attrib['code'] != '9':
 			new_subfields[subfields.attrib['code']] = subfields.text
-	print (sorted(new_subfields.items()))
-	return sorted(new_subfields.items())
+	print (new_subfields)
+	return new_subfields
 
 """
 	Get the holding data that you will post back to the Alma API
@@ -64,6 +64,15 @@ def add_853_field(record,new_subfields):
 		sub.text = value
 	record.append(marc_853)
 
+"""
+	Gets the current max $8 of teh 853 fields in the holding record
+"""
+def return_max_subfield8(holding):
+	subfield_8s = []
+	for marc_853 in holding.findall('record/datafield[@tag="853"]'):
+		for subfield in marc_853.findall('subfield[@code="8"]'):
+			subfield_8s.append(subfield.text)
+	return max(subfield_8s)
 
 """
 	Gets holding data form the Alma API, calls add_853_field, and posts updated holding with added 853 field
@@ -72,11 +81,15 @@ def create_853_field(url,new_subfields):
 	response = requests.get(url)
 	if response.status_code != 200:
 		return None
-	print (response.content)
 	holding = ET.fromstring(response.content)
 	if holding.find('record/datafield[@tag="853"]') is not None:
 		logging.info("853 already in holding record: " + url)
-		return None
+		max_subfield8 = return_max_subfield8(holding)
+		new_subfields['8'] = str(int(max_subfield8) + 1)
+	else:
+		new_subfields['8'] = '1'
+	new_subfields = sorted(new_subfields.items())
+	print (new_subfields)
 	record = holding.findall('record')[0]
 	add_853_field(record,new_subfields)
 	headers = {"Content-Type": "application/xml"}
@@ -104,6 +117,7 @@ def get_best_891_field(records):
 		print (max_datafield.find('subfield[@code="8"]').text)
 	return max_datafield
 	
+
 
 """
 	Read in bib record XML export from Alma
