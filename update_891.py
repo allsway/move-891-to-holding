@@ -15,6 +15,7 @@ def get_key():
 def get_base_url():
 	return config.get('Params', 'baseurl')
 
+# Returns the location that is used for periodicals - only holdings in this location will receive the 891 field. 
 def get_periodical_loc():
 	return config.get('Params', 'location')
 	
