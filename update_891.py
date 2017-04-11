@@ -24,8 +24,6 @@ def get_periodical_loc():
 	Return holding API url
 """
 def get_holding_url(mms_id,holding_id):
-	print (mms_id)
-	print (holding_id)
 	return get_base_url() + "bibs/" + mms_id + '/holdings/' + holding_id + '?apikey=' + get_key()
 	
 		
@@ -34,7 +32,7 @@ def get_holding_url(mms_id,holding_id):
 """
 def get_marc_elements(datafield):
 	new_subfields = {}
-	indicator = datafield.find('subfield[@code="8"]').text
+	# subfield8 = datafield.find('subfield[@code="8"]').text
 	for subfields in datafield.findall('subfield'):
 		if subfields.attrib['code'] != '9':
 			new_subfields[subfields.attrib['code']] = subfields.text
@@ -47,7 +45,6 @@ def get_marc_elements(datafield):
 	Options:
 		- Just add it to each holding.  
 		- Add it based on location (can camupuses provide the location of their active holdings?)
-		- Pick the one with an associated order record? Not retrievable through the API
 """
 def get_holding(records):
 	for holdings in records.findall('./datafield[@tag="852"]'):
@@ -68,7 +65,7 @@ def add_853_field(record,new_subfields):
 	record.append(marc_853)
 
 """
-	Gets the current max $8 of teh 853 fields in the holding record
+	Gets the current max $8 of the 853 fields in the *holding* record, so that new 853$8 can be incremented by 1. 
 """
 def return_max_subfield8(holding):
 	subfield_8s = []
@@ -100,11 +97,13 @@ def create_853_field(url,new_subfields):
 	r = requests.put(url,data=ET.tostring(holding),headers=headers)
 	print (r.content)
 	if r.status_code == 200:
-		logging.info('')
+		logging.info('Successfully added 853 to ' + url)
+	else:
+		logging.info('Failed to add 853 to ' + url)
 
 	
 """
-	Returns the matching datafield for the 891 field that has a highest indicators 
+	Returns the matching datafield for the 891 field that has a highest $8 
 """
 def get_best_891_field(records):
 	subfield_val = 0
@@ -131,12 +130,17 @@ def read_bibs(bib_records):
 		# Get bib record MMS ID 
 		mms_id = records.find('./controlfield[@tag="001"]').text
 		print(mms_id)
+		# MARC records will have multiple 891 fields.  Select the correct one:
 		rec = get_best_891_field(records)
+		# Provided that there is an 891 field in the bib record in the first place:
 		if rec is not None:
+			# get data from 891
 			new_subfields = get_marc_elements(rec)
+			# get the correct holding to add the 891 data to
 			holding_id = get_holding(records)
 			if holding_id is not None:
 				url = get_holding_url(mms_id,holding_id)
+				# add the 853 field to the holing, with the 891 subfields
 				create_853_field(url,new_subfields)
 			else:
 				logging.info('No holding found in record: ' +  mms_id)
