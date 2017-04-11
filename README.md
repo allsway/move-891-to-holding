@@ -37,4 +37,23 @@ A bib record has the following 891 fields:
  - Of the 891 $9 853 fields, it will select the 891 field with the highest $8.  
  
  The result:
-  `891	20 |9 853 |8 4 |a v. |b no. |u 7 |v r |i (year) |j (month) |w m |x 01/02 |y cm01/02,03/04,06/07,08/09,11/12` will be added to your holding record at location `location`. 
+ 
+ If the holding record already has an 853 statement, the new 853 statement will be added to the subsequent holding $8.  
+ Old holding:
+ ```
+ 852	01 |b Main |c ps5 |h DS41 |i .W37
+ 853	__ |8 1 |a v. |b no. |i (year) |j (month)
+ 863	__ |8 1.1 |a 7-25 |b 7-9 |i 1988-2006 |j 11-12 |z + Current 1 year only
+ 866	41 |a v.7:no.7(1988:Nov.)-v.25:no.9(2006:Dec.) |z + Current 1 year only |8 1.1
+ 853	__ |8 2 |a v. |b no. |i (year) |j (month) |u 8 |v r |w m |x 01/02 |y cm01/02,03/04,06/07,11/12
+ ```
+ New holding
+  ```
+  852	01 |b Main |c ps5 |h DS41 |i .W37
+ 	853	__ |8 1 |a v. |b no. |i (year) |j (month)
+  853	__ |8 2 |a v. |b no. |i (year) |j (month) |u 8 |v r |w m |x 01/02 |y cm01/02,03/04,06/07,11/12 # Newly inserted
+ 	863	__ |8 1.1 |a 7-25 |b 7-9 |i 1988-2006 |j 11-12 |z + Current 1 year only
+ 	866	41 |a v.7:no.7(1988:Nov.)-v.25:no.9(2006:Dec.) |z + Current 1 year only |8 1.1
+  ```
+  
+  If there are multiple holdings attached to the bib record, the 853 will be added only your holding record at location `location`. 
