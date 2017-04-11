@@ -45,15 +45,14 @@ A bib record has the following 891 fields:
  853	__ |8 1 |a v. |b no. |i (year) |j (month)
  863	__ |8 1.1 |a 7-25 |b 7-9 |i 1988-2006 |j 11-12 |z + Current 1 year only
  866	41 |a v.7:no.7(1988:Nov.)-v.25:no.9(2006:Dec.) |z + Current 1 year only |8 1.1
- 853	__ |8 2 |a v. |b no. |i (year) |j (month) |u 8 |v r |w m |x 01/02 |y cm01/02,03/04,06/07,11/12
  ```
  New holding
   ```
   852	01 |b Main |c ps5 |h DS41 |i .W37
- 	853	__ |8 1 |a v. |b no. |i (year) |j (month)
+  853	__ |8 1 |a v. |b no. |i (year) |j (month)
   853	__ |8 2 |a v. |b no. |i (year) |j (month) |u 8 |v r |w m |x 01/02 |y cm01/02,03/04,06/07,11/12 # Newly inserted
- 	863	__ |8 1.1 |a 7-25 |b 7-9 |i 1988-2006 |j 11-12 |z + Current 1 year only
- 	866	41 |a v.7:no.7(1988:Nov.)-v.25:no.9(2006:Dec.) |z + Current 1 year only |8 1.1
+  863	__ |8 1.1 |a 7-25 |b 7-9 |i 1988-2006 |j 11-12 |z + Current 1 year only
+  866	41 |a v.7:no.7(1988:Nov.)-v.25:no.9(2006:Dec.) |z + Current 1 year only |8 1.1
   ```
   
   If there are multiple holdings attached to the bib record, the 853 will be added only your holding record at location `location`. 
