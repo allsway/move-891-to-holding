@@ -5,7 +5,6 @@ import csv
 import configparser
 import logging
 import collections
-from bisect import bisect
 import xml.etree.ElementTree as ET
 
 # Returns the API key
@@ -93,6 +92,17 @@ def find_prior_element(record):
     return record.getchildren().index(prior_element) + 1
 
 
+# Making holding put request with 853 from the bib record
+def put_holding(url,holding):
+    headers = {"Content-Type": "application/xml"}
+#    print (ET.tostring(holding))
+    r = requests.put(url,data=ET.tostring(holding),headers=headers)
+    print (r.content)
+    if r.status_code == 200:
+        logging.info('Successfully added 853 to ' + url)
+    else:
+        logging.info('Failed to add 853 to ' + url)
+
 """
     Gets holding data form the Alma API, calls add_853_field, and posts updated holding with added 853 field
 """
@@ -114,14 +124,7 @@ def create_853_field(url,new_subfields):
     record = add_853_field(record,new_subfields,prior)
     print (ET.tostring(record))
 #    print (record.findall('datafield'))
-    headers = {"Content-Type": "application/xml"}
-#    print (ET.tostring(holding))
-    r = requests.put(url,data=ET.tostring(holding),headers=headers)
-    print (r.content)
-    if r.status_code == 200:
-        logging.info('Successfully added 853 to ' + url)
-    else:
-        logging.info('Failed to add 853 to ' + url)
+    put_holding(url,holding)
 
 
 """
