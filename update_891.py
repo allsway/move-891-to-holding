@@ -48,8 +48,13 @@ def get_marc_elements(datafield):
 """
 def get_holding(records):
     for holdings in records.findall('./datafield[@tag="852"]'):
-        if holdings.find('subfield[@code="c"]').text == get_periodical_loc():
-            return holdings.find('subfield[@code="8"]').text
+        print(holdings.find('subfield[@code="c"]').text)
+        print("Periodical loc:" +  get_periodical_loc())
+        locations = get_periodical_loc().split(",")
+        for location in locations:
+            if holdings.find('subfield[@code="c"]').text == location:
+                print ("equal")
+                return holdings.find('subfield[@code="8"]').text
 
 
 #def get_element_before():
@@ -97,6 +102,7 @@ def put_holding(url,holding):
     headers = {"Content-Type": "application/xml"}
 #    print (ET.tostring(holding))
     r = requests.put(url,data=ET.tostring(holding),headers=headers)
+    print ('Posted holding results: ')
     print (r.content)
     if r.status_code == 200:
         logging.info('Successfully added 853 to ' + url)
@@ -114,7 +120,7 @@ def create_853_field(url,new_subfields):
     if holding.find('record/datafield[@tag="853"]') is not None:
         logging.info("853 in holding record: " + url)
         max_subfield8 = return_max_subfield8(holding)
-        new_subfields['8'] = str(int(max_subfield8) + 1)
+        new_subfields['8'] = str(float(max_subfield8.strip('"')) + 1)
     else:
         new_subfields['8'] = '1'
     new_subfields = sorted(new_subfields.items())
@@ -164,6 +170,7 @@ def read_bibs(bib_records):
             # get the correct holding to add the 891 data to
             holding_id = get_holding(records)
             if holding_id is not None:
+                print(holding_id)
                 url = get_holding_url(mms_id,holding_id)
                 # add the 853 field to the holing, with the 891 subfields
                 create_853_field(url,new_subfields)
