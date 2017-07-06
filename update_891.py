@@ -46,23 +46,17 @@ def get_marc_elements(datafield):
         - Just add it to each holding.
         - Add it based on location (can camupuses provide the location of their active holdings?)
 """
-def get_holding(records):
-    for holdings in records.findall('./datafield[@tag="852"]'):
-        print(holdings.find('subfield[@code="c"]').text)
-        print("Periodical loc:" +  get_periodical_loc())
-        locations = get_periodical_loc().split(",")
-        for location in locations:
-            if holdings.find('subfield[@code="c"]').text == location:
-                print ("equal")
-                return holdings.find('subfield[@code="8"]').text
+def get_holding(holding):
+    print(holding.find('subfield[@code="c"]').text)
+    print("Periodical loc:" +  get_periodical_loc())
+    #locations = get_periodical_loc().split(",")
+    #for location in locations:
+    #    if holdings.find('subfield[@code="c"]').text == location:
+    print ("equal")
+    return holding.find('subfield[@code="8"]').text
 
 
-#def get_element_before():
-
-
-"""
-    Creates the 853 datafield element and appends all subfields from the 891 field to the 853 holding field
-"""
+#Creates the 853 datafield element and appends all subfields from the 891 field to the 853 holding field
 def add_853_field(record,new_subfields,prior):
     marc_853 = ET.Element('datafield')
     marc_853.set("tag","853")
@@ -109,9 +103,7 @@ def put_holding(url,holding):
     else:
         logging.info('Failed to add 853 to ' + url)
 
-"""
-    Gets holding data form the Alma API, calls add_853_field, and posts updated holding with added 853 field
-"""
+#Gets holding data form the Alma API, calls add_853_field, and posts updated holding with added 853 field
 def create_853_field(url,new_subfields):
     response = requests.get(url)
     if response.status_code != 200:
@@ -133,9 +125,7 @@ def create_853_field(url,new_subfields):
     put_holding(url,holding)
 
 
-"""
-    Returns the matching datafield for the 891 field that has a highest $8
-"""
+# Returns the matching datafield for the 891 field that has a highest $8
 def get_best_891_field(records):
     subfield_val = 0
     max_datafield = None
@@ -150,11 +140,7 @@ def get_best_891_field(records):
         print (max_datafield.find('subfield[@code="8"]').text)
     return max_datafield
 
-
-
-"""
-    Read in bib record XML export from Alma
-"""
+# Read in bib record XML export from Alma
 def read_bibs(bib_records):
     tree = ET.parse(bib_records)
     for records in tree.findall('record'):
@@ -168,14 +154,16 @@ def read_bibs(bib_records):
             # get data from 891
             new_subfields = get_marc_elements(rec)
             # get the correct holding to add the 891 data to
-            holding_id = get_holding(records)
-            if holding_id is not None:
-                print(holding_id)
-                url = get_holding_url(mms_id,holding_id)
-                # add the 853 field to the holing, with the 891 subfields
-                create_853_field(url,new_subfields)
-            else:
-                logging.info('No holding found in record: ' +  mms_id)
+            # for each holding
+            for holding in records.findall('./datafield[@tag="852"]'):
+                holding_id = get_holding(holding)
+                print (holding_id)
+                if holding_id is not None:
+                    url = get_holding_url(mms_id,holding_id)
+                    # add the 853 field to the holing, with the 891 subfields
+                    create_853_field(url,new_subfields)
+                else:
+                    logging.info('No holding found in record: ' +  mms_id)
         else:
             logging.info('No 891 field found in record: ' + mms_id)
 
